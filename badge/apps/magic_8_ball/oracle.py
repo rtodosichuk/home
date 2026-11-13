@@ -115,7 +115,8 @@ SHOWING = 3
 
 
 class Ball:
-    """Animation state: the ball turns over, then the answer floats up."""
+    """Animation state: the ball turns over, the answer floats up, and the
+    ball can turn over again to return to the eight face."""
 
     FLIP_MS = 1000
     REVEAL_MS = 700
@@ -125,17 +126,34 @@ class Ball:
         self.elapsed = 0
         self.answer = None
         self.previous = None
+        self.returning = False
 
     def busy(self):
-        return self.state == FLIPPING or self.state == REVEALING
+        return self.state in (FLIPPING, REVEALING)
+
+    @property
+    def showing(self):
+        return self.state == SHOWING and self.answer is not None
 
     def ask(self, randint):
         """Start turning over to a new answer. randint(a, b) is inclusive."""
         if self.busy():
             return False
+        self.returning = False
         choices = [i for i in range(len(ANSWERS)) if i != self.answer]
         self.previous = self.answer
         self.answer = choices[randint(0, len(choices) - 1)]
+        self.state = FLIPPING
+        self.elapsed = 0
+        return True
+
+    def go_back(self):
+        """Flip back from the answer to the eight face."""
+        if not self.showing:
+            return False
+        self.returning = True
+        self.previous = self.answer
+        self.answer = None
         self.state = FLIPPING
         self.elapsed = 0
         return True
@@ -145,7 +163,7 @@ class Ball:
             return
         self.elapsed += max(dt_ms, 0)
         if self.state == FLIPPING and self.elapsed >= self.FLIP_MS:
-            self.state = REVEALING
+            self.state = IDLE if self.returning else REVEALING
             self.elapsed -= self.FLIP_MS
         if self.state == REVEALING and self.elapsed >= self.REVEAL_MS:
             self.state = SHOWING

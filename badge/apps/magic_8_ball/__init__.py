@@ -148,7 +148,7 @@ def draw_hint():
         return
     set_text_style()
     screen.pen = HINT
-    text = "Shake me or press SELECT" if ball.state == IDLE else "Shake again to ask another question"
+    text = "Shake me or press SELECT" if ball.state == IDLE else "SELECT to flip back · Shake to ask again"
     draw_text(text, 0, H - 22, W, 18, 13)
 
 
@@ -157,7 +157,12 @@ def update():
     ax, ay, az, _gx, _gy, _gz = badge.imu()
     shaken = detector.update(ax, ay, az, dt)
 
-    if shaken or badge.pressed(BUTTON_SELECT):
+    if badge.pressed(BUTTON_SELECT):
+        if ball.showing:
+            ball.go_back()
+        else:
+            ball.ask(random.randint)
+    elif shaken:
         ball.ask(random.randint)
 
     ball.advance(dt)
@@ -180,13 +185,20 @@ def update():
     elif ball.state == FLIPPING:
         p = ball.flip_progress()
         squash = abs(math.cos(p * math.pi))
-        if p < 0.5:
-            if ball.previous is None:
-                draw_eight_face(x, y, squash)
-            else:
+        if ball.returning:
+            # Flip back: answer on the front half, eight-face on the back half.
+            if p < 0.5:
                 draw_answer_face(x, y, squash, ball.previous, 1.0)
+            else:
+                draw_eight_face(x, y, squash)
         else:
-            draw_answer_face(x, y, squash, ball.answer, 0.0)
+            if p < 0.5:
+                if ball.previous is None:
+                    draw_eight_face(x, y, squash)
+                else:
+                    draw_answer_face(x, y, squash, ball.previous, 1.0)
+            else:
+                draw_answer_face(x, y, squash, ball.answer, 0.0)
     else:
         draw_answer_face(x, y, 1.0, ball.answer, ball.reveal_progress())
 
