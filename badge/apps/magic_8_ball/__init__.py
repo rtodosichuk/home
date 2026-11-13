@@ -106,10 +106,12 @@ def draw_eight_face(x, y, squash):
     if squash < 0.75:
         return
     screen.pen = EIGHT
-    r = FACE_R * 0.27
-    w = 0.13 * FACE_R
-    screen.shape(shape.circle(x, y - r * 0.95, r * 0.88).stroke(w))
-    screen.shape(shape.circle(x, y + r * 1.05, r * 1.05).stroke(w))
+    s = 0.85  # overall scale of the "8" relative to the white face
+    w = 0.18 * FACE_R * s
+    # Two slightly-squashed circles stacked and touching at the middle, like
+    # a stylised "8" (a smaller top loop and a slightly larger bottom loop).
+    screen.shape(shape.ellipse(x, y - FACE_R * 0.44 * s, FACE_R * 0.38 * s, FACE_R * 0.27 * s).stroke(w))
+    screen.shape(shape.ellipse(x, y + FACE_R * 0.33 * s, FACE_R * 0.44 * s, FACE_R * 0.33 * s).stroke(w))
 
 
 def draw_answer_face(x, y, squash, index, reveal):
